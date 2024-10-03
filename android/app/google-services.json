@@ -1,0 +1,105 @@
+{
+  "project_info": {
+    "project_number": "66002642104",
+    "project_id": "wa4games-poc",
+    "storage_bucket": "wa4games-poc.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:66002642104:android:a0343b88fb8dd3f632004d",
+        "android_client_info": {
+          "package_name": "com.messengage.starplusgame"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCDLd4r1OtDDkwVk-CM1peqUwrAAj2S6bg"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:66002642104:android:8d7e4fbd1a7a43a332004d",
+        "android_client_info": {
+          "package_name": "com.example.wa4games_poc"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCDLd4r1OtDDkwVk-CM1peqUwrAAj2S6bg"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:66002642104:android:8d2896ecb9e218ba32004d",
+        "android_client_info": {
+          "package_name": "com.messengage.starPlusGame"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCDLd4r1OtDDkwVk-CM1peqUwrAAj2S6bg"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:66002642104:android:e18379936e7795de32004d",
+        "android_client_info": {
+          "package_name": "com.messengage.starplus"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCDLd4r1OtDDkwVk-CM1peqUwrAAj2S6bg"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:66002642104:android:3472588b406f993032004d",
+        "android_client_info": {
+          "package_name": "com.messengage.starplus_game"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCDLd4r1OtDDkwVk-CM1peqUwrAAj2S6bg"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
