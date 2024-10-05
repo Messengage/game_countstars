@@ -1,5 +1,3 @@
-// ignore_for_file: avoid_print, deprecated_member_use, unused_field
-
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
@@ -40,8 +38,6 @@ class _StarGamePageState extends State<StarGamePage> {
   String? gameId;
   int _starCount = 5;
   bool _isLoading = false;
-  String _responseMessage = 'Awaiting response...';
-  String _userId = '';
 
   @override
   void initState() {
@@ -61,17 +57,13 @@ class _StarGamePageState extends State<StarGamePage> {
         if (uri != null) {
           _handleDeepLink(uri);
         }
-      }, onError: (err) {
-        print('Erro ao escutar deep links: $err');
-      });
+      }, onError: (err) {});
     } catch (e) {
       print('Erro ao inicializar deep links: $e');
     }
   }
 
-  Future<void> _initUserId() async {
-    _userId = await _getDeviceIdentifier();
-  }
+  Future<void> _initUserId() async {}
 
   Future<String> _getDeviceIdentifier() async {
     if (Platform.isIOS) {
@@ -92,17 +84,14 @@ class _StarGamePageState extends State<StarGamePage> {
   }
 
   void _handleDeepLink(Uri uri) {
-    print('Deep link recebido: $uri');
     try {
       final id = uri.queryParameters['id'];
-      final lives = uri.queryParameters['lives']; // Captura o número de vidas
+      final lives = uri.queryParameters['lives'];
       if (id != null) {
         print('ID do jogo: $id');
         if (lives != null) {
-          // Processa a quantidade de vidas e atualiza o estado da aplicação
           int livesCount = int.parse(lives);
           print('Quantidade de vidas recebida: $livesCount');
-          // Atualiza a quantidade de vidas no app, por exemplo:
           setState(() {
             _starCount = livesCount;
           });
@@ -128,69 +117,38 @@ class _StarGamePageState extends State<StarGamePage> {
         _starCount--;
       }
     });
+
+    if (_starCount == 0) {
+      _showNoLivesDialog();
+    }
   }
 
-  Future<void> startFlow() async {
-    const String url =
-        'https://game.api.messengage.ai/game/entrypoint/GQjXS7Uz/pQjXS7Up/ios?custom_user_id=1234';
-
-    const headers = {
-      'api-key': 'j84iC6GWSWFTOH5F4EUxVW5kf4dz6AGA',
-    };
-
-    setState(() {
-      _isLoading = true;
-    });
-
-    final response = await _makeGetRequest(url, headers);
-
-    if (response != null && response.containsKey('deepLink')) {
-      final String deepLink = response['deepLink'];
-
-      // Extraia o valor do destinationUrl
-      Uri parsedUri = Uri.parse(deepLink);
-      String destinationUrl = parsedUri.queryParameters['destinationUrl'] ?? '';
-
-      // Decodifica a URL, pois está codificada em URL encoding
-      destinationUrl = Uri.decodeFull(destinationUrl);
-
-      print('Deep link decodificado: $destinationUrl');
-
-      // Agora, tenta abrir o link do WhatsApp
-      if (await canLaunch(destinationUrl)) {
-        await launch(destinationUrl, forceSafariVC: false);
-      } else {
-        print('Não foi possível abrir o WhatsApp com o link: $destinationUrl');
-      }
-
-      setState(() {
-        _responseMessage = deepLink;
-      });
-    } else {
-      setState(() {
-        _responseMessage = 'Failed to get deep link';
-      });
-      print('Falha ao obter o deep link: $response');
-    }
-
-    setState(() {
-      _isLoading = false;
-    });
-  }
-
-  Future<Map<String, dynamic>?> _makeGetRequest(
-      String url, Map<String, String> headers) async {
-    try {
-      final response = await http.get(Uri.parse(url), headers: headers);
-      if (response.statusCode == 200) {
-        return jsonDecode(response.body) as Map<String, dynamic>;
-      } else {
-        print('Erro na resposta: ${response.statusCode}');
-      }
-    } catch (e) {
-      print('Erro ao fazer a requisição GET: $e');
-    }
-    return null;
+  Future<void> _showNoLivesDialog() async {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          backgroundColor: const Color(0xFFEEF0F2),
+          title: const Text('Out of Stars? '),
+          content: const Text(
+              'No worries! 🌟 Get more lives now and keep the adventure going. You\'re just one step away from shining bright again.'),
+          actions: <Widget>[
+            TextButton(
+              onPressed: _isLoading ? null : fetchAndOpenWhatsApp,
+              child: _isLoading
+                  ? const CircularProgressIndicator()
+                  : const Text(
+                      'Ask for more stars',
+                      style: TextStyle(
+                        fontSize: 18,
+                        color: Color(0xFF372755),
+                      ),
+                    ),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   Future<void> fetchAndOpenWhatsApp() async {
@@ -217,7 +175,6 @@ class _StarGamePageState extends State<StarGamePage> {
     });
 
     try {
-      // Em seguida, realizar o POST para obter o deep link e abrir o WhatsApp
       final response = await http.post(
         url,
         headers: headers,
@@ -226,14 +183,9 @@ class _StarGamePageState extends State<StarGamePage> {
 
       if (response.statusCode == 200) {
         final responseBody = jsonDecode(response.body);
-
-        // Verifica se a resposta contém o deepLink
         if (responseBody != null && responseBody.containsKey('deepLink')) {
           final String deepLink = responseBody['deepLink'];
-
           print('Deep link decodificado: $deepLink');
-
-          // Agora, tenta abrir o link do WhatsApp
           if (await canLaunch(deepLink)) {
             await launch(deepLink);
           } else {
@@ -248,6 +200,8 @@ class _StarGamePageState extends State<StarGamePage> {
     setState(() {
       _isLoading = false;
     });
+
+    Navigator.of(context).pop();
   }
 
   @override
@@ -259,33 +213,52 @@ class _StarGamePageState extends State<StarGamePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: const Color(0xFFEEF0F2),
       appBar: AppBar(
+        backgroundColor: const Color(0xFFEEF0F2),
         title: const Text('Star Game'),
+        centerTitle: true,
       ),
       body: Center(
-        child: _starCount > 0
-            ? ElevatedButton(
-                onPressed: _decrementStar,
-                child: Text('Play ($_starCount)'),
-              )
-            : Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  ElevatedButton(
-                    onPressed: _isLoading ? null : startFlow,
-                    child: _isLoading
-                        ? const CircularProgressIndicator()
-                        : const Text('Go to WhatsApp (GET)'),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  Icons.star,
+                  color: _starCount > 0 ? const Color(0xFFFFD600) : Colors.red,
+                  size: 150,
+                ),
+                const SizedBox(width: 20),
+                Text(
+                  '$_starCount',
+                  style: const TextStyle(
+                    fontSize: 100,
+                    fontWeight: FontWeight.bold,
                   ),
-                  const SizedBox(height: 20),
-                  ElevatedButton(
-                    onPressed: _isLoading ? null : fetchAndOpenWhatsApp,
-                    child: _isLoading
-                        ? const CircularProgressIndicator()
-                        : const Text('Go to WhatsApp (POST)'),
-                  ),
-                ],
+                ),
+              ],
+            ),
+            const SizedBox(height: 50),
+            ElevatedButton(
+              onPressed: _decrementStar,
+              style: ElevatedButton.styleFrom(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 40, vertical: 20),
+                textStyle: const TextStyle(fontSize: 15),
+                minimumSize: const Size(100, 40),
               ),
+              child: const Text(
+                'PLAY',
+                style: TextStyle(
+                  color: Color(0xFF372755),
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -299,6 +272,7 @@ class GameScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: const Color(0xFF372755),
       appBar: AppBar(title: Text('Playing Game $gameId')),
       body: Center(child: Text('Playing Game $gameId')),
     );
