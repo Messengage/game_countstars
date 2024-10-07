@@ -6,6 +6,8 @@ import 'package:http/http.dart' as http;
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:uni_links/uni_links.dart';
+import 'package:sqflite/sqflite.dart';
+import 'package:path_provider/path_provider.dart';
 
 void main() {
   runApp(const StarGameApp());
@@ -38,12 +40,13 @@ class _StarGamePageState extends State<StarGamePage> {
   String? gameId;
   int _starCount = 5;
   bool _isLoading = false;
-
+  late Database _database;
   @override
   void initState() {
     super.initState();
+    _initDatabase();
     _initDeepLink();
-    _initUserId();
+    _initStarCount();
   }
 
   Future<void> _initDeepLink() async {
@@ -63,7 +66,48 @@ class _StarGamePageState extends State<StarGamePage> {
     }
   }
 
-  Future<void> _initUserId() async {}
+  Future<void> _initDatabase() async {
+    Directory documentsDirectory = await getApplicationDocumentsDirectory();
+    String path = "${documentsDirectory.path}/game_data.db";
+
+    _database = await openDatabase(
+      path,
+      version: 1,
+      onCreate: (db, version) async {
+        await db.execute(
+            "CREATE TABLE StarCount (id INTEGER PRIMARY KEY, stars INTEGER, lives INTEGER)");
+        await db.insert("StarCount", {"id": 1, "stars": 5, "lives": 0});
+      },
+    );
+  }
+
+  Future<void> _initStarCount() async {
+    List<Map<String, dynamic>> result =
+        await _database.query("StarCount", where: "id = ?", whereArgs: [1]);
+    if (result.isNotEmpty) {
+      setState(() {
+        _starCount = result.first["stars"] ?? 5;
+      });
+    }
+  }
+
+  Future<void> _updateStarCount(int newStars) async {
+    await _database.update("StarCount", {"stars": newStars},
+        where: "id = ?", whereArgs: [1]);
+    setState(() {
+      _starCount = newStars;
+    });
+  }
+
+  Future<void> _incrementLives(int lives) async {
+    List<Map<String, dynamic>> result =
+        await _database.query("StarCount", where: "id = ?", whereArgs: [1]);
+    if (result.isNotEmpty) {
+      int currentLives = result.first["lives"] ?? 0;
+      await _database.update("StarCount", {"lives": currentLives + lives},
+          where: "id = ?", whereArgs: [1]);
+    }
+  }
 
   Future<String> _getDeviceIdentifier() async {
     if (Platform.isIOS) {
@@ -83,17 +127,18 @@ class _StarGamePageState extends State<StarGamePage> {
     return deviceInfo.androidInfo;
   }
 
-  void _handleDeepLink(Uri uri) {
+  void _handleDeepLink(Uri uri) async {
     try {
       final id = uri.queryParameters['id'];
       final lives = uri.queryParameters['lives'];
       if (id != null) {
         print('ID do jogo: $id');
         if (lives != null) {
-          int livesCount = int.parse(lives);
-          print('Quantidade de vidas recebida: $livesCount');
+          int lives = int.parse(uri.queryParameters['lives'] ?? '0');
+          await _incrementLives(lives);
+          print('Quantidade de vidas recebida: $lives');
           setState(() {
-            _starCount = livesCount;
+            _starCount = lives;
           });
         }
         setState(() {
@@ -111,10 +156,17 @@ class _StarGamePageState extends State<StarGamePage> {
     }
   }
 
+  @override
+  void dispose() {
+    _sub?.cancel();
+    super.dispose();
+  }
+
   void _decrementStar() async {
     setState(() {
       if (_starCount > 0) {
         _starCount--;
+        _updateStarCount(_starCount);
       }
     });
 
@@ -233,12 +285,6 @@ class _StarGamePageState extends State<StarGamePage> {
     });
 
     Navigator.of(context).pop();
-  }
-
-  @override
-  void dispose() {
-    _sub?.cancel();
-    super.dispose();
   }
 
   @override
