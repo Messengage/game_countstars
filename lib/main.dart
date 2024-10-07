@@ -1,4 +1,4 @@
-// ignore_for_file: avoid_print
+// ignore_for_file: avoid_print, prefer_const_constructors
 
 import 'dart:async';
 import 'dart:convert';
@@ -46,11 +46,11 @@ class _StarGamePageState extends State<StarGamePage> {
   @override
   void initState() {
     super.initState();
-    _initDatabase();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _initDeepLink();
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      await _initDatabase(); // Aguarda a inicialização do banco de dados
+      await _initStarCount(); // Só inicializa o contador após a inicialização do banco de dados
+      _initDeepLink(); // Inicializa deep links depois
     });
-    _initStarCount();
   }
 
   Future<void> _initDeepLink() async {
@@ -79,7 +79,7 @@ class _StarGamePageState extends State<StarGamePage> {
       version: 1,
       onCreate: (db, version) async {
         await db.execute(
-            "CREATE TABLE StarCount (id INTEGER PRIMARY KEY, stars INTEGER, lives INTEGER)");
+            "CREATE TABLE StarCount (id INTEGER PRIMARY KEY, lives INTEGER)");
       },
     );
 
@@ -87,8 +87,8 @@ class _StarGamePageState extends State<StarGamePage> {
     List<Map<String, dynamic>> result =
         await _database.query("StarCount", where: "id = ?", whereArgs: [1]);
     if (result.isEmpty) {
-      await _database.insert("StarCount",
-          {"id": 1, "stars": 0, "lives": 0}); // Insert only if empty
+      await _database
+          .insert("StarCount", {"id": 1, "lives": 0}); // Insert only if empty
     }
   }
 
@@ -145,27 +145,23 @@ class _StarGamePageState extends State<StarGamePage> {
 
   void _handleDeepLink(Uri uri) async {
     try {
-      final id = uri.queryParameters['id'];
       final livesParam = uri.queryParameters['lives'];
-      if (id != null) {
-        print('ID do jogo: $id');
-        if (livesParam != null) {
-          int lives = int.tryParse(livesParam) ?? 0;
-          await _incrementLives(
-              lives); // Atualiza o banco de dados com novas vidas
-          await _initStarCount(); // Atualiza o valor do `_starCount` no widget
 
-          print('Quantidade de vidas recebida: $lives');
-        }
+      if (livesParam != null) {
+        int lives = int.tryParse(livesParam) ?? 0;
+        await _incrementLives(
+            lives); // Atualiza o banco de dados com novas vidas
+        await _initStarCount(); // Atualiza o valor do `_starCount` no widget
+
+        print('Quantidade de vidas recebida: $lives');
+
         setState(() {
-          gameId = id;
+          _starCount = lives;
         });
         Navigator.push(
           context,
-          MaterialPageRoute(builder: (context) => GameScreen(gameId: id)),
+          MaterialPageRoute(builder: (context) => GameScreen(gameId: "1")),
         );
-      } else {
-        print('ID não encontrado nos parâmetros do link');
       }
     } catch (e) {
       print('Erro ao processar deep link: $e');
@@ -251,7 +247,7 @@ class _StarGamePageState extends State<StarGamePage> {
       if (response.statusCode == 200) {
         final responseBody = jsonDecode(response.body);
         if (responseBody != null && responseBody.containsKey('deepLink')) {
-          final String deepLink = 'http://' + responseBody['deepLink'];
+          final String deepLink = responseBody['deepLink'];
           print('Deep link decodificado: $deepLink');
           if (await canLaunchUrl(Uri.parse(deepLink))) {
             await launchUrl(Uri.parse(deepLink));
