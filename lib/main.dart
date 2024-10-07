@@ -134,7 +134,7 @@ class _StarGamePageState extends State<StarGamePage> {
               'No worries! 🌟 Get more lives now and keep the adventure going. You\'re just one step away from shining bright again.'),
           actions: <Widget>[
             TextButton(
-              onPressed: _isLoading ? null : fetchAndOpenWhatsApp,
+              onPressed: _isLoading ? null : fetchAndOpenWhatsAppPOST,
               child: _isLoading
                   ? const CircularProgressIndicator()
                   : const Text(
@@ -151,27 +151,22 @@ class _StarGamePageState extends State<StarGamePage> {
     );
   }
 
-  Future<void> fetchAndOpenWhatsApp() async {
+  Future<void> fetchAndOpenWhatsAppPOST() async {
     final url = Uri.parse(
-        'https://game-api-ohymxcqbya-uc.a.run.app/game/entrypoint/fjkdyqS0/dQciY5l2o');
-
+        'https://game-api-ohymxcqbya-uc.a.run.app/game/entrypoint/GQjXS7Uz/pQjXS7Up/ios');
     final headers = {
-      'api-key': 'TwjHo7lWBTfpIgzAVV3WItKe0dheKLIT',
+      'api-key': 'j84iC6GWSWFTOH5F4EUxVW5kf4dz6AGA',
       'Content-Type': 'application/json',
     };
 
     final body = jsonEncode({
-      'custom_user_id': 'D2A4B-321232-9K73212',
-      'custom_data1': '1',
-      'custom_data2': '1',
-      'custom_data3': '1',
+      'custom_user_id': 'KELVENGLINDO1',
+      'custom_data1': 'jhown Wekler',
+      'custom_data2': 'jhown.wekler@jet.com',
+      'custom_data3': 'Sao Paulo',
       'country': 'BR',
       'language': 'PT-BR',
-      'idfv_or_app_set_id': 'D2A4B-321232-9K73212',
-    });
-
-    setState(() {
-      _isLoading = true;
+      'idfv_or_app_set_id': 'D2A7C-321232-9K73230'
     });
 
     try {
@@ -179,6 +174,42 @@ class _StarGamePageState extends State<StarGamePage> {
         url,
         headers: headers,
         body: body,
+      );
+
+      if (response.statusCode == 200) {
+        final responseBody = jsonDecode(response.body);
+        if (responseBody != null && responseBody.containsKey('deepLink')) {
+          final String deepLink = 'http://' + responseBody['deepLink'];
+          print('Deep link decodificado: $deepLink');
+          if (await canLaunchUrl(Uri.parse(deepLink))) {
+            await launchUrl(Uri.parse(deepLink));
+          } else {
+            print('Não foi possível abrir o WhatsApp com o link: $deepLink');
+          }
+        }
+      }
+    } catch (e) {
+      print('Erro: $e');
+    }
+
+    setState(() {
+      _isLoading = false;
+    });
+
+    Navigator.of(context).pop();
+  }
+
+  Future<void> fetchAndOpenWhatsAppGET() async {
+    final url = Uri.parse(
+        'https://game.api.messengage.ai/game/entrypoint/GQjXS7Uz/pQjXS7Up/ios?custom_user_id=1234');
+    final headers = {
+      'api-key': 'j84iC6GWSWFTOH5F4EUxVW5kf4dz6AGA',
+    };
+
+    try {
+      final response = await http.get(
+        url,
+        headers: headers,
       );
 
       if (response.statusCode == 200) {
