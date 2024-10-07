@@ -1,3 +1,5 @@
+// ignore_for_file: avoid_print
+
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
@@ -38,14 +40,16 @@ class StarGamePage extends StatefulWidget {
 class _StarGamePageState extends State<StarGamePage> {
   StreamSubscription<Uri?>? _sub;
   String? gameId;
-  int _starCount = 5;
+  int _starCount = 0;
   bool _isLoading = false;
   late Database _database;
   @override
   void initState() {
     super.initState();
     _initDatabase();
-    _initDeepLink();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _initDeepLink();
+    });
     _initStarCount();
   }
 
@@ -76,9 +80,16 @@ class _StarGamePageState extends State<StarGamePage> {
       onCreate: (db, version) async {
         await db.execute(
             "CREATE TABLE StarCount (id INTEGER PRIMARY KEY, stars INTEGER, lives INTEGER)");
-        await db.insert("StarCount", {"id": 1, "stars": 5, "lives": 0});
       },
     );
+
+    // Check if table is empty before inserting default values
+    List<Map<String, dynamic>> result =
+        await _database.query("StarCount", where: "id = ?", whereArgs: [1]);
+    if (result.isEmpty) {
+      await _database.insert("StarCount",
+          {"id": 1, "stars": 0, "lives": 0}); // Insert only if empty
+    }
   }
 
   Future<void> _initStarCount() async {
@@ -86,7 +97,7 @@ class _StarGamePageState extends State<StarGamePage> {
         await _database.query("StarCount", where: "id = ?", whereArgs: [1]);
     if (result.isNotEmpty) {
       setState(() {
-        _starCount = result.first["stars"] ?? 5;
+        _starCount = result.first["lives"] ?? 0;
       });
     }
   }
@@ -106,6 +117,11 @@ class _StarGamePageState extends State<StarGamePage> {
       int currentLives = result.first["lives"] ?? 0;
       await _database.update("StarCount", {"lives": currentLives + lives},
           where: "id = ?", whereArgs: [1]);
+
+      // Atualiza a variável local e o estado do widget
+      setState(() {
+        _starCount = currentLives + lives;
+      });
     }
   }
 
@@ -130,16 +146,16 @@ class _StarGamePageState extends State<StarGamePage> {
   void _handleDeepLink(Uri uri) async {
     try {
       final id = uri.queryParameters['id'];
-      final lives = uri.queryParameters['lives'];
+      final livesParam = uri.queryParameters['lives'];
       if (id != null) {
         print('ID do jogo: $id');
-        if (lives != null) {
-          int lives = int.parse(uri.queryParameters['lives'] ?? '0');
-          await _incrementLives(lives);
+        if (livesParam != null) {
+          int lives = int.tryParse(livesParam) ?? 0;
+          await _incrementLives(
+              lives); // Atualiza o banco de dados com novas vidas
+          await _initStarCount(); // Atualiza o valor do `_starCount` no widget
+
           print('Quantidade de vidas recebida: $lives');
-          setState(() {
-            _starCount = lives;
-          });
         }
         setState(() {
           gameId = id;
@@ -204,6 +220,10 @@ class _StarGamePageState extends State<StarGamePage> {
   }
 
   Future<void> fetchAndOpenWhatsAppPOST() async {
+    setState(() {
+      _isLoading = true;
+    });
+
     final url = Uri.parse(
         'https://game-api-ohymxcqbya-uc.a.run.app/game/entrypoint/GQjXS7Uz/pQjXS7Up/ios');
     final headers = {
@@ -248,6 +268,8 @@ class _StarGamePageState extends State<StarGamePage> {
       _isLoading = false;
     });
 
+    // Fechar o diálogo e atualizar a contagem de vidas
+    await _initStarCount(); // Atualiza a contagem de vidas com os valores mais recentes do banco de dados
     Navigator.of(context).pop();
   }
 
@@ -269,8 +291,8 @@ class _StarGamePageState extends State<StarGamePage> {
         if (responseBody != null && responseBody.containsKey('deepLink')) {
           final String deepLink = responseBody['deepLink'];
           print('Deep link decodificado: $deepLink');
-          if (await canLaunch(deepLink)) {
-            await launch(deepLink);
+          if (await canLaunchUrl(Uri.parse(deepLink))) {
+            await launchUrl(Uri.parse(deepLink));
           } else {
             print('Não foi possível abrir o WhatsApp com o link: $deepLink');
           }
