@@ -3,9 +3,11 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:device_info_plus/device_info_plus.dart';
+import 'package:star_plus_game/cloud_clipper.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:uni_links/uni_links.dart';
 import 'package:sqflite/sqflite.dart';
@@ -37,16 +39,34 @@ class StarGamePage extends StatefulWidget {
   State<StarGamePage> createState() => _StarGamePageState();
 }
 
-class _StarGamePageState extends State<StarGamePage> {
+class _StarGamePageState extends State<StarGamePage>
+    with TickerProviderStateMixin {
   StreamSubscription<Uri?>? _sub;
   String? gameId;
   int _starCount = 0;
   bool _isLoading = false;
   late Database _database;
+  late AnimationController _bounceController; // Controlador para o salto
+  late AnimationController _sparkleController; // Controlador para o brilho
 
   @override
   void initState() {
     super.initState();
+    // Controlador para a animação de salto
+    _bounceController = AnimationController(
+      duration: const Duration(milliseconds: 500),
+      vsync: this,
+    )..repeat(reverse: true);
+
+    // Controlador para o brilho
+    _sparkleController = AnimationController(
+      duration: const Duration(milliseconds: 1500),
+      vsync: this,
+    );
+
+    _sparkleController.addListener(() {
+      setState(() {});
+    });
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       await _initDatabase(); // Aguarda a inicialização do banco de dados
       await _initStarCount(); // Só inicializa o contador após a inicialização do banco de dados
@@ -167,6 +187,8 @@ class _StarGamePageState extends State<StarGamePage> {
   @override
   void dispose() {
     _sub?.cancel();
+    _bounceController.dispose();
+    _sparkleController.dispose();
     super.dispose();
   }
 
@@ -175,6 +197,7 @@ class _StarGamePageState extends State<StarGamePage> {
       if (_starCount > 0) {
         _starCount--;
         _updateStarCount(_starCount);
+        _sparkleController.forward(from: 0.0);
       }
     });
 
@@ -305,11 +328,28 @@ class _StarGamePageState extends State<StarGamePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFEEF0F2),
-      appBar: AppBar(
-        backgroundColor: const Color(0xFFEEF0F2),
-        title: const Text('Star Game'),
-        centerTitle: true,
+      backgroundColor: Color(0xFF81D4FA), // Azul céu claro
+      // AppBar com formato de nuvem
+      appBar: PreferredSize(
+        preferredSize:
+            const Size.fromHeight(150.0), // Definir a altura da AppBar
+        child: ClipPath(
+          clipper: CloudClipper(),
+          child: Container(
+            color: const Color(0xFFEEF0F2), // Cor de fundo da nuvem
+            child: Center(
+              child: Text(
+                'Star Game',
+                style: TextStyle(
+                  fontSize: 30,
+                  fontWeight: FontWeight.bold,
+                  color:
+                      const Color(0xFFFFD700), // Amarelo escuro para o título
+                ),
+              ),
+            ),
+          ),
+        ),
       ),
       bottomNavigationBar: GestureDetector(
         onTap: fetchAndOpenWhatsAppGET, // Chama a função ao clicar
@@ -332,13 +372,56 @@ class _StarGamePageState extends State<StarGamePage> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
+            // Container para exibir a animação de estrela feliz/triste
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(
-                  Icons.star,
-                  color: _starCount > 0 ? const Color(0xFFFFD600) : Colors.red,
-                  size: 150,
+                // Animação combinada de salto e brilho
+                Stack(
+                  alignment: Alignment.center,
+                  children: [
+                    // Brilho ao redor da estrela feliz
+                    if (_starCount > 0)
+                      ...List.generate(10, (index) {
+                        final angle = (index / 10) *
+                            2 *
+                            pi; // Ângulo para distribuir as partículas
+                        const radius = 70.0;
+                        return Positioned(
+                          left: radius * cos(angle) + 60, // Posição horizontal
+                          top: radius * sin(angle) + 60, // Posição vertical
+                          child: Opacity(
+                            opacity: 1.0 -
+                                _sparkleController
+                                    .value, // Reduzir opacidade ao longo do tempo
+                            child: Container(
+                              width: 10,
+                              height: 10,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                color: Colors.yellow.withOpacity(0.8),
+                              ),
+                            ),
+                          ),
+                        );
+                      }),
+                    // Animação de salto
+                    Transform.translate(
+                      offset: Offset(
+                          0, -10 * sin(_bounceController.value * 2 * pi)),
+                      child: _starCount > 0
+                          ? Image.asset(
+                              'assets/happy_star.png',
+                              width: 150,
+                              height: 150,
+                            )
+                          : Image.asset(
+                              'assets/sad_star.png',
+                              width: 150,
+                              height: 150,
+                            ),
+                    ),
+                  ],
                 ),
                 const SizedBox(width: 20),
                 Text(
@@ -372,3 +455,6 @@ class _StarGamePageState extends State<StarGamePage> {
     );
   }
 }
+
+// Definir um CustomClipper para recortar a forma de nuvem
+
