@@ -43,12 +43,16 @@ class _StarGamePageState extends State<StarGamePage> {
   int _starCount = 0;
   bool _isLoading = false;
   late Database _database;
+
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       await _initDatabase(); // Aguarda a inicialização do banco de dados
       await _initStarCount(); // Só inicializa o contador após a inicialização do banco de dados
+      _getDeviceIdentifier().then((value) {
+        gameId = value;
+      });
       _initDeepLink(); // Inicializa deep links depois
     });
   }
@@ -76,7 +80,7 @@ class _StarGamePageState extends State<StarGamePage> {
 
     _database = await openDatabase(
       path,
-      version: 1,
+      version: 2,
       onCreate: (db, version) async {
         await db.execute(
             "CREATE TABLE StarCount (id INTEGER PRIMARY KEY, lives INTEGER)");
@@ -88,7 +92,7 @@ class _StarGamePageState extends State<StarGamePage> {
         await _database.query("StarCount", where: "id = ?", whereArgs: [1]);
     if (result.isEmpty) {
       await _database
-          .insert("StarCount", {"id": 1, "lives": 0}); // Insert only if empty
+          .insert("StarCount", {"id": 1, "lives": 5}); // Insert only if empty
     }
   }
 
@@ -103,7 +107,7 @@ class _StarGamePageState extends State<StarGamePage> {
   }
 
   Future<void> _updateStarCount(int newStars) async {
-    await _database.update("StarCount", {"stars": newStars},
+    await _database.update("StarCount", {"lives": newStars},
         where: "id = ?", whereArgs: [1]);
     setState(() {
       _starCount = newStars;
@@ -125,6 +129,7 @@ class _StarGamePageState extends State<StarGamePage> {
     }
   }
 
+  // ignore: unused_element
   Future<String> _getDeviceIdentifier() async {
     if (Platform.isIOS) {
       return (await _getDeviceInfo()).identifierForVendor!;
@@ -144,24 +149,15 @@ class _StarGamePageState extends State<StarGamePage> {
   }
 
   void _handleDeepLink(Uri uri) async {
+    print(uri);
     try {
       final livesParam = uri.queryParameters['lives'];
 
       if (livesParam != null) {
         int lives = int.tryParse(livesParam) ?? 0;
-        await _incrementLives(
-            lives); // Atualiza o banco de dados com novas vidas
-        await _initStarCount(); // Atualiza o valor do `_starCount` no widget
+        await _incrementLives(lives);
 
         print('Quantidade de vidas recebida: $lives');
-
-        setState(() {
-          _starCount = lives;
-        });
-        Navigator.push(
-          context,
-          MaterialPageRoute(builder: (context) => GameScreen(gameId: "1")),
-        );
       }
     } catch (e) {
       print('Erro ao processar deep link: $e');
@@ -198,7 +194,12 @@ class _StarGamePageState extends State<StarGamePage> {
               'No worries! 🌟 Get more lives now and keep the adventure going. You\'re just one step away from shining bright again.'),
           actions: <Widget>[
             TextButton(
-              onPressed: _isLoading ? null : fetchAndOpenWhatsAppPOST,
+              onPressed: _isLoading
+                  ? null
+                  : () {
+                      Navigator.of(context).pop();
+                      fetchAndOpenWhatsAppPOST();
+                    },
               child: _isLoading
                   ? const CircularProgressIndicator()
                   : const Text(
@@ -228,13 +229,13 @@ class _StarGamePageState extends State<StarGamePage> {
     };
 
     final body = jsonEncode({
-      'custom_user_id': 'KELVENGLINDO1',
+      'custom_user_id': gameId ?? 'KELVENGLINDO1',
       'custom_data1': 'jhown Wekler',
       'custom_data2': 'jhown.wekler@jet.com',
       'custom_data3': 'Sao Paulo',
       'country': 'BR',
       'language': 'PT-BR',
-      'idfv_or_app_set_id': 'D2A7C-321232-9K73230'
+      'idfv_or_app_set_id': gameId ?? 'D2A7C-321232-9K73230'
     });
 
     try {
@@ -264,14 +265,12 @@ class _StarGamePageState extends State<StarGamePage> {
       _isLoading = false;
     });
 
-    // Fechar o diálogo e atualizar a contagem de vidas
-    await _initStarCount(); // Atualiza a contagem de vidas com os valores mais recentes do banco de dados
-    Navigator.of(context).pop();
+    // Atualiza a contagem de vidas com os valores mais recentes do banco de dados
   }
 
   Future<void> fetchAndOpenWhatsAppGET() async {
     final url = Uri.parse(
-        'https://game.api.messengage.ai/game/entrypoint/GQjXS7Uz/pQjXS7Up/ios?custom_user_id=1234');
+        'https://game.api.messengage.ai/game/entrypoint/GQjXS7Uz/pQjXS7Up/ios?custom_user_id=${gameId ?? "12345"}');
     final headers = {
       'api-key': 'j84iC6GWSWFTOH5F4EUxVW5kf4dz6AGA',
     };
@@ -301,8 +300,6 @@ class _StarGamePageState extends State<StarGamePage> {
     setState(() {
       _isLoading = false;
     });
-
-    Navigator.of(context).pop();
   }
 
   @override
@@ -313,6 +310,23 @@ class _StarGamePageState extends State<StarGamePage> {
         backgroundColor: const Color(0xFFEEF0F2),
         title: const Text('Star Game'),
         centerTitle: true,
+      ),
+      bottomNavigationBar: GestureDetector(
+        onTap: fetchAndOpenWhatsAppGET, // Chama a função ao clicar
+        child: Container(
+          height: 50,
+          width: double.infinity,
+          color: Colors.transparent, // Transparente acinzentado
+          child: Center(
+            child: Text(
+              '',
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 16,
+              ),
+            ),
+          ),
+        ),
       ),
       body: Center(
         child: Column(
@@ -355,21 +369,6 @@ class _StarGamePageState extends State<StarGamePage> {
           ],
         ),
       ),
-    );
-  }
-}
-
-class GameScreen extends StatelessWidget {
-  final String gameId;
-
-  const GameScreen({super.key, required this.gameId});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFF372755),
-      appBar: AppBar(title: Text('Playing Game $gameId')),
-      body: Center(child: Text('Playing Game $gameId')),
     );
   }
 }

@@ -1,0 +1,10 @@
+flutter_launcher_icons:
+  image_path: "assets/icon.png" # Ícone padrão para iOS
+  
+  android: true
+  image_path_android: "assets/icon.png" # Ícone padrão para Android (opcional)
+  adaptive_icon_background: "#FFFFFF" # Cor de fundo do ícone adaptativo (pode ser uma cor sólida ou uma imagem)
+  adaptive_icon_foreground: "assets/icon.png" # Ícone principal (com apenas a parte visível, sem fundo)
+
+  ios: true
+  remove_alpha_channel_ios: true # Remover canal alfa para evitar transparência no iOS
