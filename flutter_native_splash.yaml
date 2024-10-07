@@ -1,0 +1,22 @@
+flutter_native_splash:
+  color: "#FFFFFF"
+  image: assets/splash_logo.png
+  android: true
+  ios: true
+  fullscreen: true
+
+
+    # Definir a posição da imagem no Android
+  android_gravity: center
+
+  # Ajustar o modo de exibição da imagem no iOS para manter a proporção sem cortar
+  ios_content_mode: scaleAspectFit
+
+  # Centralizar a imagem na versão web
+  web_image_mode: center
+
+  android_12:
+    image: assets/splash_logo.png
+    icon_background_color: "#ffffff"
+    fullscreen: true
+    android_gravity: center

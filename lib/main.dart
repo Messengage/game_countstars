@@ -5,6 +5,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:math';
 import 'package:flutter/material.dart';
+import 'package:flutter_native_splash/flutter_native_splash.dart';
 import 'package:http/http.dart' as http;
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:star_plus_game/cloud_clipper.dart';
@@ -14,6 +15,8 @@ import 'package:sqflite/sqflite.dart';
 import 'package:path_provider/path_provider.dart';
 
 void main() {
+  WidgetsBinding widgetsBinding = WidgetsFlutterBinding.ensureInitialized();
+  FlutterNativeSplash.preserve(widgetsBinding: widgetsBinding);
   runApp(const StarGameApp());
 }
 
@@ -75,6 +78,7 @@ class _StarGamePageState extends State<StarGamePage>
       });
       _initDeepLink(); // Inicializa deep links depois
     });
+    FlutterNativeSplash.remove();
   }
 
   Future<void> _initDeepLink() async {
@@ -252,7 +256,7 @@ class _StarGamePageState extends State<StarGamePage>
     };
 
     final body = jsonEncode({
-      'custom_user_id': gameId ?? 'KELVENGLINDO1',
+      'custom_user_id': 'KELVENGLINDO1',
       'custom_data1': 'jhown Wekler',
       'custom_data2': 'jhown.wekler@jet.com',
       'custom_data3': 'Sao Paulo',
