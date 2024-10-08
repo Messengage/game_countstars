@@ -229,12 +229,11 @@ class _StarGamePageState extends State<StarGamePage>
                     },
               child: _isLoading
                   ? const CircularProgressIndicator()
-                  : const Text(
-                      'Ask for more stars',
-                      style: TextStyle(
-                        fontSize: 18,
-                        color: Color(0xFF372755),
-                      ),
+                  : Image.asset(
+                      'assets/button.png', // Caminho da imagem dentro do diretório assets
+                      width: 250, // Largura da imagem
+                      height: 40, // Altura da imagem
+                      fit: BoxFit.fill,
                     ),
             ),
           ],
@@ -256,7 +255,7 @@ class _StarGamePageState extends State<StarGamePage>
     };
 
     final body = jsonEncode({
-      'custom_user_id': 'KELVENGLINDO1',
+      'custom_user_id': gameId ?? 'DEMO123',
       'custom_data1': 'jhown Wekler',
       'custom_data2': 'jhown.wekler@jet.com',
       'custom_data3': 'Sao Paulo',
@@ -297,7 +296,7 @@ class _StarGamePageState extends State<StarGamePage>
 
   Future<void> fetchAndOpenWhatsAppGET() async {
     final url = Uri.parse(
-        'https://game.api.messengage.ai/game/entrypoint/GQjXS7Uz/pQjXS7Up/ios?custom_user_id=${gameId ?? "12345"}');
+        'https://game.api.messengage.ai/game/entrypoint/GQjXS7Uz/pQjXS7Up/ios?custom_user_id=${gameId ?? "DEMO123"}');
     final headers = {
       'api-key': 'j84iC6GWSWFTOH5F4EUxVW5kf4dz6AGA',
     };
