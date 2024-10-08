@@ -1,22 +1,14 @@
 flutter_native_splash:
-  color: "#FFFFFF"
-  image: assets/splash_logo.png
+  color: "#ffffff"  # Cor de fundo do splash screen
+  color_dark: "#ffffff"
+  image: assets/splash_logo.png  # Caminho para a imagem do splash
   android: true
   ios: true
-  fullscreen: true
-
-
-    # Definir a posição da imagem no Android
-  android_gravity: center
-
-  # Ajustar o modo de exibição da imagem no iOS para manter a proporção sem cortar
-  ios_content_mode: scaleAspectFit
-
-  # Centralizar a imagem na versão web
-  web_image_mode: center
+  fullscreen: false  # Ativa a tela cheia
 
   android_12:
-    image: assets/splash_logo.png
-    icon_background_color: "#ffffff"
-    fullscreen: true
-    android_gravity: center
+    color: "#ffffff"
+    image: assets/splash_logo.png  # Caminho para a imagem específica do Android 12
+    icon_background_color: "#ffffff"  # Cor de fundo do ícone (caso seja utilizado)
+    fullscreen: false  # Tela cheia no Android 12
+    android_gravity: center  # Preencher a tela sem cortar
